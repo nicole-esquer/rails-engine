@@ -6,6 +6,7 @@ Rails.application.routes.draw do
         resources :items
       end
       resources :items do
+        resources :merchant
       end
     end
   end

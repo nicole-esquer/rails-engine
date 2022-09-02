@@ -10,7 +10,7 @@ class Api::V1::ItemsController < ApplicationController
    def create
       item = Item.create(item_params)
       if item.save
-         render json: ItemSerializer.new(item), status: 201
+         render json: ItemSerializer.new(item)
       else
          render status: 404
       end
@@ -19,7 +19,7 @@ class Api::V1::ItemsController < ApplicationController
    def update
       item = Item.find(params[:id])
       if item.update(item_params)
-         render json: ItemSerializer.new(item), status: 200
+         render json: ItemSerializer.new(item)
       else
          render status: 404
       end
