@@ -58,4 +58,6 @@ RSpec.describe 'Merchants API' do
       expect(merchant_1.items.count).to eq(1)
       expect(merchant_1.items.count).to_not eq(2)
    end
+
+   
 end
