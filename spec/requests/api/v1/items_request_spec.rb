@@ -74,7 +74,7 @@ describe "Items API" do
    it "can update existing item record" do
       merchant_id = create(:merchant).id
       item_id = create(:item, merchant_id: merchant_id).id
-      previous_price = Item.last.unit_price
+      last_price = Item.last.unit_price
       updated_params = { unit_price: 1.00 }
       
       headers = {"CONTENT_TYPE" => "application/json"}
@@ -84,7 +84,7 @@ describe "Items API" do
       item = Item.find_by(id: item_id)
 
       expect(response).to be_successful
-      expect(item.unit_price).to_not eq(previous_price)
+      expect(item.unit_price).to_not eq(last_price)
        expect(item.unit_price).to eq(1.00)
   end
 
