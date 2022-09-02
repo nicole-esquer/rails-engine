@@ -1,24 +1,7 @@
-# README
+#  Rails Engine README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+This project simulates the experience of developing an E-Commerce Application for a company. As a back end developer, the goal of this project is to expose the data that powers the site through an API that the front end will consume.
 
-Things you may want to cover:
+Ruby version: 2.7.4
+Rails version: 5.2.6
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
