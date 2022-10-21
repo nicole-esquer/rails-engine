@@ -1,8 +1,7 @@
 require 'rails_helper'
 
-describe "Items API" do
-  it "sends list of all items" do
-
+describe 'Items API' do
+  it 'sends list of all items' do
     merchant = create(:merchant)
     create_list(:item, 10, merchant_id: merchant.id)
 
@@ -30,7 +29,7 @@ describe "Items API" do
     end
   end
 
-  it "can get one item" do
+  it 'can get one item' do
     merchant = create(:merchant)
     item_id = create(:item, merchant_id: merchant.id).id
 
@@ -53,50 +52,142 @@ describe "Items API" do
     expect(item[:data][:attributes]).to have_key(:merchant_id)
   end
 
-   it "can create a new item" do
-      merchant = create(:merchant)
-      item_params = ({name: "Item", description: "This is an item", unit_price: 1.50, merchant_id: (merchant.id)})
-      headers = {"CONTENT_TYPE" => "application/json"}
+  it 'can create a new item' do
+    merchant = create(:merchant)
+    item_params = { name: 'Item', description: 'This is an item', unit_price: 1.50, merchant_id: merchant.id }
+    headers = { 'CONTENT_TYPE' => 'application/json' }
 
-      post "/api/v1/items", headers: headers, params: JSON.generate(item: item_params)
+    post '/api/v1/items', headers: headers, params: JSON.generate(item: item_params)
 
-      item = Item.last
+    item = Item.last
 
-      expect(response).to be_successful
+    expect(response).to be_successful
 
-      expect(item.name).to eq(item_params[:name])
-      expect(item.name).to eq("Item")
-      expect(item.description).to eq("This is an item")
-      expect(item.unit_price).to eq(1.50)
-      expect(item.merchant_id).to eq(merchant.id)
-   end
-
-   it "can update existing item record" do
-      merchant_id = create(:merchant).id
-      item_id = create(:item, merchant_id: merchant_id).id
-      last_price = Item.last.unit_price
-      updated_params = { unit_price: 1.00 }
-      
-      headers = {"CONTENT_TYPE" => "application/json"}
-
-      patch "/api/v1/items/#{item_id}", headers: headers, params: JSON.generate({item: updated_params})
-
-      item = Item.find_by(id: item_id)
-
-      expect(response).to be_successful
-      expect(item.unit_price).to_not eq(last_price)
-       expect(item.unit_price).to eq(1.00)
+    expect(item.name).to eq(item_params[:name])
+    expect(item.name).to eq('Item')
+    expect(item.description).to eq('This is an item')
+    expect(item.unit_price).to eq(1.50)
+    expect(item.merchant_id).to eq(merchant.id)
   end
 
-   it "can destroy an item" do
-      merchant = create(:merchant)
-      item = create(:item, merchant_id: merchant.id)
+  it 'will not create item without all params' do
+    merchant = create(:merchant)
+    item_params = {
+      name: nil,
+      description: 'Yellow, plastic, excellent desk company',
+      unit_price: 4.05,
+      merchant_id: nil
+    }
+    headers = { 'CONTENT_TYPE' => 'application/json' }
 
-      expect(Item.count).to eq(1)
+    post '/api/v1/items', headers: headers, params: JSON.generate(item: item_params)
 
-      delete "/api/v1/items/#{item.id}"
+    expect(response).to have_http_status(404)
+  end
 
-      expect(response).to be_successful
-      expect(Item.count).to eq(0)
-   end
+  it 'can update existing item record' do
+    merchant_id = create(:merchant).id
+    item_id = create(:item, merchant_id: merchant_id).id
+    previous_price = Item.last.unit_price
+    updated_params = { unit_price: 5.99 }
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+
+    patch "/api/v1/items/#{item_id}", headers: headers, params: JSON.generate({ item: updated_params })
+
+    item = Item.find_by(id: item_id)
+
+    expect(response).to be_successful
+    expect(item.unit_price).to_not eq(previous_price)
+    expect(item.unit_price).to eq(5.99)
+  end
+
+  it 'will not update item without all params' do
+    merchant_id = create(:merchant).id
+    item_id = create(:item, merchant_id: merchant_id).id
+    previous_price = Item.last.unit_price
+    updated_params = { unit_price: nil }
+    headers = { 'CONTENT_TYPE' => 'application/json' }
+
+    patch "/api/v1/items/#{item_id}", headers: headers, params: JSON.generate({ item: updated_params })
+
+    item = Item.find_by(id: item_id)
+    expect(response).to have_http_status(404)
+  end
+
+  it 'can destroy an item' do
+    merchant = create(:merchant)
+    item = create(:item, merchant_id: merchant.id)
+
+    expect(Item.count).to eq(1)
+
+    delete "/api/v1/items/#{item.id}"
+
+    expect(response).to be_successful
+    expect(Item.count).to eq(0)
+    expect { Item.find(item.id) }.to raise_error(ActiveRecord::RecordNotFound)
+  end
+
+  it 'sends merchant associated with the item' do
+    merchant = create(:merchant)
+    item = create(:item, merchant_id: merchant.id)
+
+    get "/api/v1/items/#{item.id}/merchant"
+
+    result = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to be_successful
+
+    expect(result).to be_a(Hash)
+    expect(result).to have_key(:data)
+    expect(result[:data]).to have_key(:type)
+    expect(result[:data][:type]).to eq('merchant')
+  end
+
+  it 'can return all items that match a search term' do
+    merchant = create(:merchant)
+    merchant2 = create(:merchant)
+    item = create(:item, name: 'necklace', merchant_id: merchant.id)
+    item2 = create(:item, name: 'brace', merchant_id: merchant.id)
+    item3 = create(:item, name: 'Neck Brace', merchant_id: merchant2.id)
+    item4 = create(:item, name: 'xylophone', merchant_id: merchant2.id)
+
+    search = 'Ace'
+
+    get "/api/v1/items/find_all?name=#{search}"
+
+    search_result = JSON.parse(response.body, symbolize_names: true)
+    expect(response).to be_successful
+    expect(search_result).to have_key(:data)
+    expect(search_result[:data]).to be_an(Array)
+  end
+
+  it 'will return an empty object if no match is found' do
+    merchant = create(:merchant)
+    merchant2 = create(:merchant)
+    item = create(:item, name: 'necklace', merchant_id: merchant.id)
+    item2 = create(:item, name: 'brace', merchant_id: merchant.id)
+    item3 = create(:item, name: 'Neck Brace', merchant_id: merchant2.id)
+    item4 = create(:item, name: 'xylophone', merchant_id: merchant2.id)
+
+    search = 'peanut'
+
+    get "/api/v1/items/find_all?name=#{search}"
+
+    search_result = JSON.parse(response.body, symbolize_names: true)
+
+    expect(response).to have_http_status(200)
+  end
+
+  it 'returns 400 if no search params specified' do
+    merchant = create(:merchant)
+    merchant2 = create(:merchant)
+    item = create(:item, name: 'necklace', merchant_id: merchant.id)
+    item2 = create(:item, name: 'brace', merchant_id: merchant.id)
+    item3 = create(:item, name: 'Neck Brace', merchant_id: merchant2.id)
+    item4 = create(:item, name: 'xylophone', merchant_id: merchant2.id)
+
+    get '/api/v1/items/find_all?name='
+
+    expect(response).to have_http_status(400)
+  end
 end
